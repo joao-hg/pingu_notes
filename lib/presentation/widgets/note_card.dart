@@ -13,11 +13,20 @@ class NoteCard extends StatelessWidget {
 
   const NoteCard({super.key, required this.note, required this.onTap});
 
+  static String _severityForNote(Note note) {
+    final now = DateTime.now();
+    final baseline = note.lastReviewedAt ?? note.createdAt;
+    final days = now.difference(baseline).inDays;
+    if (days >= 30) return 'red';
+    if (days >= 15) return 'orange';
+    if (days >= 7) return 'yellow';
+    return 'none';
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
-    final provider = context.watch<NoteProvider>();
-    final severity = provider.getForgottenSeverity(note);
+    final severity = _severityForNote(note);
     final review = _reviewStateFromSeverity(severity);
 
     return AnimatedContainer(

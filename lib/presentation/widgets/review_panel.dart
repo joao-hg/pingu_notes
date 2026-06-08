@@ -25,14 +25,17 @@ class ReviewPanel extends StatelessWidget {
             children: [
               if (dueReviews.isNotEmpty) ...[
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '📚 Estudo Espaçado',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    Flexible(
+                      child: Text(
+                        '📚 Estudo Espaçado',
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     _StudyNowButton(count: dueReviews.length),
                   ],
                 ),
@@ -154,9 +157,7 @@ class _StudyNowButton extends StatelessWidget {
   void _startStudySession(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const StudyPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const StudyPage()),
     );
   }
 }

@@ -20,7 +20,7 @@ class Note extends Equatable {
   final int reviewCount;
   final DateTime? lastReviewedAt;
   final DateTime? nextReviewAt;
-  final int masteryLevel; // 0: Never, 1-3: Learning, 4+: Mastered
+  final int masteryLevel; // 0: never reviewed, 1: learning, 2: mastered
   final String? audioPath;
   final String? transcription;
   final Map<String, dynamic>? aiAnalysis;

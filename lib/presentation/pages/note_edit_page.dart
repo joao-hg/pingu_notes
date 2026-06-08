@@ -298,7 +298,12 @@ class _NoteEditPageState extends State<NoteEditPage> {
                                   radius: 6,
                                 ),
                                 const SizedBox(width: 8),
-                                Text(p.name),
+                                Flexible(
+                                  child: Text(
+                                    p.name,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ],
                             ),
                           ),

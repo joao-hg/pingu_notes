@@ -101,9 +101,15 @@ class _ActiveGoalsSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(g.title, style: const TextStyle(fontSize: 11)),
+                      Flexible(
+                        child: Text(
+                          g.title,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Text('${(g.progress * 100).toInt()}%', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                     ],
                   ),

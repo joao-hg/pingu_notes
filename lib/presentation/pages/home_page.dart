@@ -410,19 +410,21 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         SizedBox(
-          height: 120,
+          height: 160,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: notes.length,
             itemBuilder: (context, index) {
               final note = notes[index];
-              return Container(
+              return SizedBox(
                 width: 180,
-                margin: const EdgeInsets.only(right: 12),
-                child: NoteCard(
-                  note: note,
-                  onTap: () => _editNote(context, note),
+                child: SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: NoteCard(
+                    note: note,
+                    onTap: () => _editNote(context, note),
+                  ),
                 ),
               );
             },

@@ -54,11 +54,40 @@ class NoteLocalDataSourceImpl implements NoteLocalDataSource {
     return _database!;
   }
 
+  static const _defaultAchievements = [
+    {'key': 'first_note', 'title': 'Primeira Nota', 'description': 'Criou sua primeira nota no Pingu'},
+    {'key': 'first_project', 'title': 'Primeiro Projeto', 'description': 'Organizou ideias em um projeto'},
+    {'key': 'notes_10', 'title': '10 Notas', 'description': 'Acumulou 10 notas'},
+    {'key': 'notes_50', 'title': '50 Notas', 'description': 'Acumulou 50 notas'},
+    {'key': 'reviews_10', 'title': '10 Revisões', 'description': 'Revisou notas 10 vezes'},
+    {'key': 'reviews_100', 'title': '100 Revisões', 'description': 'Revisou notas 100 vezes'},
+    {'key': 'streak_7', 'title': '7 Dias Seguidos', 'description': 'Usou o Pingu por 7 dias consecutivos'},
+  ];
+
+  Future<void> _seedAchievements(Database db) async {
+    for (final a in _defaultAchievements) {
+      await db.insert('achievements', Map<String, dynamic>.from(a),
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+  }
+
+  Future<void> _createIndexes(Database db) async {
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_notes_updated_at ON notes (updated_at DESC)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_notes_is_favorite ON notes (is_favorite)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_notes_project_id ON notes (project_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_notes_category ON notes (category)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_notes_next_review ON notes (next_review_at)');
+  }
+
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'pingu_notes.db');
     return await openDatabase(
       path,
-      version: 7,
+      version: 8,
+      onConfigure: (db) async {
+        await db.execute('PRAGMA journal_mode=WAL');
+        await db.execute('PRAGMA foreign_keys=ON');
+      },
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE notes(
@@ -168,6 +197,8 @@ class NoteLocalDataSourceImpl implements NoteLocalDataSource {
             FOREIGN KEY (note_id) REFERENCES notes (id) ON DELETE CASCADE
           )
         ''');
+        await _createIndexes(db);
+        await _seedAchievements(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -293,6 +324,13 @@ class NoteLocalDataSourceImpl implements NoteLocalDataSource {
             )
           ''');
         }
+        if (oldVersion < 8) {
+          await _createIndexes(db);
+          await _seedAchievements(db);
+        }
+      },
+      onOpen: (db) async {
+        await _seedAchievements(db);
       },
     );
   }
@@ -512,7 +550,7 @@ class NoteLocalDataSourceImpl implements NoteLocalDataSource {
     await db.update(
       'achievements',
       {'unlocked_at': DateTime.now().toIso8601String()},
-      where: 'key = ?',
+      where: 'key = ? AND unlocked_at IS NULL',
       whereArgs: [key],
     );
   }

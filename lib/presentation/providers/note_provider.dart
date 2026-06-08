@@ -286,8 +286,15 @@ class NoteProvider with ChangeNotifier {
   }
 
   Future<void> reviewNote(Note note) async {
-    await reviewNoteUseCase(note);
-    await searchNotes(_currentQuery);
+    try {
+      await reviewNoteUseCase(note);
+      await searchNotes(_currentQuery);
+      await _checkReviewAchievements();
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('[NoteProvider.reviewNote] $e');
+      notifyListeners();
+    }
   }
 
   // --- Knowledge OS V1 Methods ---
@@ -399,7 +406,12 @@ class NoteProvider with ChangeNotifier {
   }
 
   Future<void> loadNotes() async {
-    _notes = await getNotesUseCase();
+    try {
+      _notes = await getNotesUseCase();
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('[NoteProvider.loadNotes] $e');
+    }
     notifyListeners();
   }
 
@@ -411,9 +423,15 @@ class NoteProvider with ChangeNotifier {
     }
     _isLoading = true;
     notifyListeners();
-    _notes = await searchNotesUseCase(query);
-    _isLoading = false;
-    notifyListeners();
+    try {
+      _notes = await searchNotesUseCase(query);
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('[NoteProvider.searchNotes] $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   void toggleShowOnlyFavorites() {
@@ -427,24 +445,43 @@ class NoteProvider with ChangeNotifier {
   }
 
   Future<void> addNote(Note note) async {
-    final savedNote = await addNoteUseCase(note);
-    _scheduleNoteNotifications(savedNote);
-    await searchNotes(_currentQuery);
+    try {
+      final savedNote = await addNoteUseCase(note);
+      _scheduleNoteNotifications(savedNote);
+      await searchNotes(_currentQuery);
+      await _checkNoteCountAchievements();
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('[NoteProvider.addNote] $e');
+      notifyListeners();
+    }
   }
 
   Future<void> updateNote(Note note) async {
-    await updateNoteUseCase(note);
-    if (note.id != null) {
-      await notificationService.cancelNoteNotifications(note.id!);
-      _scheduleNoteNotifications(note);
+    try {
+      await updateNoteUseCase(note);
+      if (note.id != null) {
+        await notificationService.cancelNoteNotifications(note.id!);
+        _scheduleNoteNotifications(note);
+      }
+      await searchNotes(_currentQuery);
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('[NoteProvider.updateNote] $e');
+      notifyListeners();
     }
-    await searchNotes(_currentQuery);
   }
 
   Future<void> deleteNote(int id) async {
-    await deleteNoteUseCase(id);
-    await notificationService.cancelNoteNotifications(id);
-    await searchNotes(_currentQuery);
+    try {
+      await deleteNoteUseCase(id);
+      await notificationService.cancelNoteNotifications(id);
+      await searchNotes(_currentQuery);
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('[NoteProvider.deleteNote] $e');
+      notifyListeners();
+    }
   }
 
   void _scheduleNoteNotifications(Note note) {
@@ -492,11 +529,25 @@ class NoteProvider with ChangeNotifier {
     );
   }
 
+  Future<void> _checkNoteCountAchievements() async {
+    final count = _notes.length;
+    if (count >= 1) await unlockAchievement('first_note');
+    if (count >= 10) await unlockAchievement('notes_10');
+    if (count >= 50) await unlockAchievement('notes_50');
+  }
+
+  Future<void> _checkReviewAchievements() async {
+    final total = _notes.fold<int>(0, (sum, n) => sum + n.reviewCount);
+    if (total >= 10) await unlockAchievement('reviews_10');
+    if (total >= 100) await unlockAchievement('reviews_100');
+  }
+
   // Projects CRUD
   Future<void> addProject(Project project) async {
     await addProjectUseCase(project);
     _projects = await getProjectsUseCase();
     notifyListeners();
+    if (_projects.length == 1) await unlockAchievement('first_project');
   }
 
   Future<void> updateProject(Project project) async {

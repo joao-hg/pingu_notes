@@ -40,33 +40,35 @@ class _AskPinguPageState extends State<AskPinguPage> {
       appBar: AppBar(
         title: const Text('💬 Pergunte ao Pingu'),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _messages.isEmpty
-                ? const _AskPinguEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = _messages[index];
-                      return _ChatMessage(
-                        text: msg['text']!,
-                        isUser: msg['role'] == 'user',
-                      );
-                    },
-                  ),
-          ),
-          if (_isTyping)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text('Pingu está pensando...', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: _messages.isEmpty
+                  ? const _AskPinguEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = _messages[index];
+                        return _ChatMessage(
+                          text: msg['text']!,
+                          isUser: msg['role'] == 'user',
+                        );
+                      },
+                    ),
             ),
-          _ChatInput(
-            controller: _queryController,
-            onSend: _sendMessage,
-          ),
-        ],
+            if (_isTyping)
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text('Pingu está pensando...', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+              ),
+            _ChatInput(
+              controller: _queryController,
+              onSend: _sendMessage,
+            ),
+          ],
+        ),
       ),
     );
   }

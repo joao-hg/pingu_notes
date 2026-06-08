@@ -31,8 +31,8 @@ class NoteModel extends Note {
   factory NoteModel.fromMap(Map<String, dynamic> map) {
     return NoteModel(
       id: map['id'],
-      title: map['title'],
-      content: map['content'],
+      title: map['title'] as String? ?? '',
+      content: map['content'] as String? ?? '',
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: DateTime.parse(map['updated_at']),
       lastViewedAt: map['last_viewed_at'] != null
@@ -47,13 +47,17 @@ class NoteModel extends Note {
       isFavorite: map['is_favorite'] == 1,
       isTask: map['is_task'] == 1,
       isCompleted: map['is_completed'] == 1,
-      priority: map['priority'] ?? 'medium',
+      priority: map['priority'] as String? ?? 'medium',
       projectId: map['project_id'],
-      category: map['category'] ?? 'inbox',
+      category: map['category'] as String? ?? 'inbox',
       aiSummary: map['ai_summary'],
       tags: (map['tags'] as String?)?.isEmpty ?? true
           ? []
-          : (map['tags'] as String).split(','),
+          : (map['tags'] as String)
+              .split(',')
+              .map((t) => t.trim())
+              .where((t) => t.isNotEmpty)
+              .toList(),
       reviewCount: map['review_count'] ?? 0,
       lastReviewedAt: map['last_reviewed_at'] != null
           ? DateTime.parse(map['last_reviewed_at'])

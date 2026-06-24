@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/images/logo_light.png" alt="Pingu Notes Logo" width="120" height="120" />
+<img src="assets/icon/icon.png" alt="Pingu Notes Logo" width="120" height="120" />
 
 # Pingu Notes
 
@@ -36,48 +36,41 @@ The app was built to study and demonstrate **scalable mobile architecture**, **l
 
 <div align="center">
 
-**Dark Mode**
-
 <table>
   <tr>
     <td align="center">
-      <img src="screenshots/01_splash_dark.png" width="180" alt="Splash — Dark"/><br/>
+      <img src="screenshots/01_splash.jpg" width="200" alt="Splash Screen"/><br/>
       <sub><b>Splash</b></sub>
     </td>
     <td align="center">
-      <img src="screenshots/02_home_dark.png" width="180" alt="Home — Dark"/><br/>
-      <sub><b>Home</b></sub>
+      <img src="screenshots/02_home.jpg" width="200" alt="Home — Dark Mode"/><br/>
+      <sub><b>Home · Dark Mode</b></sub>
     </td>
     <td align="center">
-      <img src="screenshots/03_editor_dark.png" width="180" alt="Editor — Dark"/><br/>
-      <sub><b>Editor</b></sub>
-    </td>
-    <td align="center">
-      <img src="screenshots/04_search_dark.png" width="180" alt="Search — Dark"/><br/>
+      <img src="screenshots/03_search.jpg" width="200" alt="Search"/><br/>
       <sub><b>Search</b></sub>
     </td>
+    <td align="center">
+      <img src="screenshots/04_favorites.jpg" width="200" alt="Favorites"/><br/>
+      <sub><b>Favorites</b></sub>
+    </td>
   </tr>
-</table>
-
-**Light Mode**
-
-<table>
   <tr>
     <td align="center">
-      <img src="screenshots/07_splash_light.png" width="180" alt="Splash — Light"/><br/>
-      <sub><b>Splash</b></sub>
+      <img src="screenshots/05_memory.jpg" width="200" alt="Memory & Evolution"/><br/>
+      <sub><b>Memory &amp; Evolution</b></sub>
     </td>
     <td align="center">
-      <img src="screenshots/08_home_light.png" width="180" alt="Home — Light"/><br/>
-      <sub><b>Home</b></sub>
+      <img src="screenshots/06_ask_pingu.jpg" width="200" alt="Ask Pingu — Offline AI"/><br/>
+      <sub><b>Ask Pingu · Offline AI</b></sub>
     </td>
     <td align="center">
-      <img src="screenshots/09_editor_light.png" width="180" alt="Editor — Light"/><br/>
-      <sub><b>Editor</b></sub>
+      <img src="screenshots/07_settings_light.jpg" width="200" alt="Settings — Light Mode"/><br/>
+      <sub><b>Settings · Light Mode</b></sub>
     </td>
     <td align="center">
-      <img src="screenshots/10_settings_light.png" width="180" alt="Settings — Light"/><br/>
-      <sub><b>Settings</b></sub>
+      <img src="screenshots/08_settings_dark.jpg" width="200" alt="Settings — Dark Mode"/><br/>
+      <sub><b>Settings · Dark Mode</b></sub>
     </td>
   </tr>
 </table>

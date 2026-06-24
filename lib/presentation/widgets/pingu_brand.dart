@@ -4,33 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 
-/// Renders the minimal penguin+feather brand logo.
-/// Automatically switches between [logo_dark.png] (dark theme)
-/// and [logo_light.png] (light theme).
-class PinguLogo extends StatelessWidget {
-  final double size;
-  final double? borderRadius;
-
-  const PinguLogo({super.key, this.size = 96, this.borderRadius});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final radius = borderRadius ?? size * 0.25;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: Image.asset(
-        isDark
-            ? 'assets/images/logo_dark.png'
-            : 'assets/images/logo_light.png',
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-      ),
-    );
-  }
-}
-
 class PinguPaper extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;

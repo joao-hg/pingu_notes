@@ -175,7 +175,15 @@ class _HomePageState extends State<HomePage> {
               ),
               child: Row(
                 children: [
-                  const PinguLogo(size: 48, borderRadius: 14),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.warmYellow,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const PinguMascot(size: 36),
+                  ),
                   const SizedBox(width: 14),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,7 +360,15 @@ class _NoteListTabState extends State<_NoteListTab> {
         children: [
           GestureDetector(
             onTap: () => widget.scaffoldKey.currentState?.openDrawer(),
-            child: const PinguLogo(size: 40, borderRadius: 12),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.warmYellow,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const PinguMascot(size: 30),
+            ),
           ),
           const SizedBox(width: 12),
           Text(

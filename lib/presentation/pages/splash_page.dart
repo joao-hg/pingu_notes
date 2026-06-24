@@ -61,23 +61,7 @@ class _SplashPageState extends State<SplashPage>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: AppColors.warmYellow,
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.warmYellow.withAlpha(80),
-                        blurRadius: 32,
-                        spreadRadius: 4,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: const PinguMascot(size: 72),
-                ),
+                const PinguLogo(size: 120),
                 const SizedBox(height: 28),
                 Text(
                   'Pingu Notes',

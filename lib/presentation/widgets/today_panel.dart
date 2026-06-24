@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../providers/note_provider.dart';
-import 'pingu_brand.dart';
 
 class TodayPanel extends StatelessWidget {
   const TodayPanel({super.key});
@@ -13,22 +13,42 @@ class TodayPanel extends StatelessWidget {
     return Consumer<NoteProvider>(
       builder: (context, provider, child) {
         final stats = provider.todayStats;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: PinguPaper(
-            color: AppColors.deepOceanBlue,
-            border: BorderSide(color: AppColors.iceBlue.withAlpha(70)),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? AppColors.darkBorder : AppColors.cardBorder,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.today_outlined, color: AppColors.warmYellow),
-                    const SizedBox(width: 8),
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withAlpha(28),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.today_outlined,
+                        color: AppColors.primaryGreen,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     Text(
                       'Hoje',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.softWhite,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
                       ),
                     ),
                   ],
@@ -40,25 +60,29 @@ class TodayPanel extends StatelessWidget {
                       label: 'Criadas',
                       value: stats['createdToday']!,
                       icon: Icons.add_circle_outline,
+                      color: AppColors.primaryGreen,
                     ),
                     _TodayStatItem(
                       label: 'Revisadas',
                       value: stats['revisedToday']!,
                       icon: Icons.visibility_outlined,
+                      color: AppColors.categoryStudy,
                     ),
                     _TodayStatItem(
                       label: 'Esquecidas',
                       value: stats['forgotten']!,
                       icon: Icons.psychology_outlined,
+                      color: AppColors.warning,
                     ),
                     _TodayStatItem(
                       label: 'Favoritas',
                       value: stats['favorites']!,
                       icon: Icons.star_border_rounded,
+                      color: AppColors.danger,
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 _TodayLine(
                   icon: Icons.check_circle_outline,
                   label: 'Tarefas para hoje',
@@ -92,41 +116,47 @@ class _TodayStatItem extends StatelessWidget {
   final String label;
   final int value;
   final IconData icon;
+  final Color color;
 
   const _TodayStatItem({
     required this.label,
     required this.value,
     required this.icon,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 3),
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.softWhite.withAlpha(18),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.iceBlue.withAlpha(50)),
+          color: color.withAlpha(isDark ? 28 : 16),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withAlpha(isDark ? 60 : 40)),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 18, color: AppColors.warmYellow),
+            Icon(icon, size: 16, color: color),
             const SizedBox(height: 4),
             Text(
               '$value',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(color: AppColors.softWhite),
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: AppColors.iceBlue),
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: color.withAlpha(200),
+              ),
             ),
           ],
         ),
@@ -148,35 +178,41 @@ class _TodayLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.iceBlue, size: 18),
+          Icon(
+            icon,
+            color: isDark ? Colors.white54 : AppColors.mutedInk,
+            size: 17,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.softWhite),
+              style: GoogleFonts.poppins(fontSize: 13),
             ),
           ),
           Container(
-            width: 28,
-            height: 28,
+            width: 26,
+            height: 26,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: count > 0
-                  ? AppColors.warmYellow
-                  : AppColors.softWhite.withAlpha(20),
-              borderRadius: BorderRadius.circular(10),
+                  ? AppColors.primaryGreen.withAlpha(isDark ? 50 : 28)
+                  : (isDark ? AppColors.darkBorder : AppColors.cardBorder),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               '$count',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: count > 0 ? AppColors.deepOceanBlue : AppColors.iceBlue,
-                fontWeight: FontWeight.w800,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: count > 0
+                    ? AppColors.primaryGreen
+                    : AppColors.mutedInk,
               ),
             ),
           ),

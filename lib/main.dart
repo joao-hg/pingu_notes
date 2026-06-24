@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';                        // ← ADICIONADO
+import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
@@ -11,7 +11,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   Intl.defaultLocale = 'pt_BR';
-  await initializeDateFormatting('pt_BR', null);
+  await initializeDateFormatting('pt_BR');
 
   await di.init();
   runApp(const MyApp());
@@ -42,12 +42,17 @@ class MyApp extends StatelessWidget {
           )..loadInitialData(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Pingu Notes',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        home: const SplashPage(),
+      child: Consumer<NoteProvider>(
+        builder: (context, provider, child) {
+          return MaterialApp(
+            title: 'Pingu Notes',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: provider.themeMode,
+            home: const SplashPage(),
+          );
+        },
       ),
     );
   }

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/note_icon.dart';
 import '../../domain/entities/note.dart';
 import '../providers/note_provider.dart';
-import 'pingu_brand.dart';
 
 class NoteCard extends StatelessWidget {
   final Note note;
@@ -13,207 +14,306 @@ class NoteCard extends StatelessWidget {
 
   const NoteCard({super.key, required this.note, required this.onTap});
 
-  static String _severityForNote(Note note) {
-    final now = DateTime.now();
-    final baseline = note.lastReviewedAt ?? note.createdAt;
-    final days = now.difference(baseline).inDays;
-    if (days >= 30) return 'red';
-    if (days >= 15) return 'orange';
-    if (days >= 7) return 'yellow';
-    return 'none';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
-    final severity = _severityForNote(note);
-    final review = _reviewStateFromSeverity(severity);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = noteIconColor(note);
+    final icon = noteIconData(note);
+    final dateStr = _formatDate(note.updatedAt);
+    final provider = context.read<NoteProvider>();
+    final severity = provider.getNoteSeverity(note);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOut,
-      margin: const EdgeInsets.only(bottom: 12),
-      child: PinguPaper(
-        padding: EdgeInsets.zero,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
         color: note.isFavorite
-            ? AppColors.warmYellow.withAlpha(48)
-            : Theme.of(context).cardTheme.color,
-        border: BorderSide(
-          color:
-              review?.color.withAlpha(170) ??
-              (note.isFavorite
-                  ? AppColors.warmYellow
-                  : Theme.of(context).colorScheme.outlineVariant.withAlpha(90)),
-          width: review != null || note.isFavorite ? 1.4 : 1,
+            ? (isDark
+                ? AppColors.warning.withAlpha(18)
+                : AppColors.warning.withAlpha(12))
+            : (isDark ? AppColors.darkCard : Colors.white),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: note.isFavorite
+              ? AppColors.warning.withAlpha(80)
+              : (isDark ? AppColors.darkBorder : AppColors.cardBorder),
         ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(22),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (note.isTask) ...[
-                  ScaleTransitionCheckbox(note: note),
-                  const SizedBox(width: 10),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (review != null) ...[
-                        _ReviewBadge(review: review),
-                        const SizedBox(height: 8),
-                      ],
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _MasteryIndicator(level: note.masteryLevel),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              note.title.isEmpty ? 'Sem título' : note.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    decoration: note.isCompleted
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Category icon
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: (note.isFavorite ? AppColors.warning : iconColor)
+                      .withAlpha(28),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  note.isFavorite ? Icons.star_rounded : icon,
+                  color: note.isFavorite ? AppColors.warning : iconColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            note.title.isEmpty ? 'Sem título' : note.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              decoration: note.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
                             ),
                           ),
-                          if (note.isTask) ...[
-                            const SizedBox(width: 8),
-                            _PriorityBadge(priority: note.priority),
-                          ],
-                        ],
-                      ),
-                      if (note.content.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          note.content,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withAlpha(190),
-                                decoration: note.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
                         ),
-                      ],
-                      if (note.tags.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: note.tags
-                              .map((tag) => _TagPill(tag: tag))
-                              .toList(),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.auto_stories_outlined,
-                            size: 15,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              _footerText(dateFormat),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall,
+                        if (severity == 'red' || severity == 'orange')
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: Icon(
+                              Icons.circle,
+                              size: 8,
+                              color: severity == 'red'
+                                  ? AppColors.danger
+                                  : AppColors.warning,
                             ),
                           ),
-                        ],
+                      ],
+                    ),
+                    if (note.content.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        _previewContent(note.content),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: isDark
+                              ? Colors.white54
+                              : AppColors.mutedInk,
+                          decoration: note.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
                       ),
                     ],
-                  ),
+                    if (note.tags.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 5,
+                        runSpacing: 4,
+                        children: note.tags
+                            .take(3)
+                            .map((tag) => _TagChip(tag: tag))
+                            .toList(),
+                      ),
+                    ],
+                    if (note.isTask) ...[
+                      const SizedBox(height: 6),
+                      _TaskControls(note: note),
+                    ],
+                  ],
                 ),
-                const SizedBox(width: 8),
-                _FavoriteButton(note: note),
-              ],
-            ),
+              ),
+              const SizedBox(width: 10),
+              // Date + actions
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    dateStr,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: isDark ? Colors.white38 : AppColors.mutedInk,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  _FavoriteButton(note: note),
+                ],
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  String _footerText(DateFormat dateFormat) {
-    String text = 'Criada em ${dateFormat.format(note.createdAt)}';
-    if (note.reviewCount > 0) {
-      text += ' · ${note.reviewCount} revisões';
-    }
-    return text;
+  static String _previewContent(String raw) {
+    var s = raw;
+    s = s.replaceAllMapped(RegExp(r'\*\*(.+?)\*\*'), (m) => m[1]!);
+    s = s.replaceAllMapped(RegExp(r'\*(.+?)\*'), (m) => m[1]!);
+    s = s.replaceAllMapped(RegExp(r'_(.+?)_'), (m) => m[1]!);
+    s = s.replaceAll(RegExp(r'```[\s\S]*?```'), '[código]');
+    s = s.replaceAllMapped(RegExp(r'`(.+?)`'), (m) => m[1]!);
+    s = s.replaceAll(RegExp(r'^- \[x\] ', multiLine: true), '☑ ');
+    s = s.replaceAll(RegExp(r'^- \[ \] ', multiLine: true), '☐ ');
+    s = s.replaceAll(RegExp(r'^- ', multiLine: true), '• ');
+    s = s.replaceAll(RegExp(r'^> ?', multiLine: true), '');
+    s = s.replaceAll(RegExp(r'^#{1,6} ', multiLine: true), '');
+    s = s.replaceAll(RegExp(r'^\-{3,}$', multiLine: true), '──────');
+    return s.trim();
   }
 
-  _ReviewState? _reviewStateFromSeverity(String severity) {
-    return switch (severity) {
-      'red' => const _ReviewState(
-        'Atenção necessária',
-        Icons.priority_high_rounded,
-        AppColors.danger,
-      ),
-      'orange' => const _ReviewState(
-        'Assunto esquecido',
-        Icons.warning_amber_rounded,
-        AppColors.softOrange,
-      ),
-      'yellow' => const _ReviewState(
-        'Revisão recomendada',
-        Icons.psychology_outlined,
-        AppColors.warmYellow,
-      ),
-      _ => null,
-    };
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays == 0) return 'Hoje';
+    if (diff.inDays == 1) return 'Ontem';
+    if (diff.inDays < 7) return '${diff.inDays}d atrás';
+    return DateFormat('dd MMM', 'pt_BR').format(date);
   }
 }
 
-class _MasteryIndicator extends StatelessWidget {
-  final int level;
+class _TagChip extends StatelessWidget {
+  final String tag;
 
-  const _MasteryIndicator({required this.level});
+  const _TagChip({required this.tag});
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (level) {
-      2 => AppColors.success,
-      1 => AppColors.warmYellow,
-      _ => AppColors.danger,
-    };
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final (textColor, bgColor) = _resolveColors(tag, isDark);
 
-    final tooltip = switch (level) {
-      2 => 'Dominada',
-      1 => 'Em aprendizado',
-      _ => 'Nunca revisada',
-    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        tag,
+        style: GoogleFonts.poppins(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: textColor,
+        ),
+      ),
+    );
+  }
 
-    return Tooltip(
-      message: tooltip,
-      child: Container(
-        margin: const EdgeInsets.only(top: 6),
-        width: 10,
-        height: 10,
-        decoration: BoxDecoration(
+  (Color, Color) _resolveColors(String tag, bool isDark) {
+    final lower = tag.toLowerCase();
+    if (['study', 'estudos', 'estudo', 'revisão'].contains(lower)) {
+      return (AppColors.categoryStudy, AppColors.categoryStudy.withAlpha(isDark ? 40 : 22));
+    }
+    if (['work', 'trabalho', 'projeto', 'project'].contains(lower)) {
+      return (AppColors.categoryProject, AppColors.categoryProject.withAlpha(isDark ? 40 : 22));
+    }
+    if (['personal', 'pessoal'].contains(lower)) {
+      return (AppColors.softOrange, AppColors.softOrange.withAlpha(isDark ? 40 : 22));
+    }
+    if (['audio', 'voz', 'recording'].contains(lower)) {
+      return (AppColors.categoryAudio, AppColors.categoryAudio.withAlpha(isDark ? 40 : 22));
+    }
+    if (['ai', 'ia', 'gpt', 'resumo'].contains(lower)) {
+      return (AppColors.categoryAI, AppColors.categoryAI.withAlpha(isDark ? 40 : 22));
+    }
+    return (
+      AppColors.primaryGreen,
+      AppColors.primaryGreen.withAlpha(isDark ? 40 : 22),
+    );
+  }
+}
+
+class _TaskControls extends StatelessWidget {
+  final Note note;
+
+  const _TaskControls({required this.note});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        ScaleTransitionCheckbox(note: note),
+        if (note.priority != 'medium') ...[
+          const SizedBox(width: 6),
+          _PriorityDot(priority: note.priority),
+        ],
+      ],
+    );
+  }
+}
+
+class _PriorityDot extends StatelessWidget {
+  final String priority;
+
+  const _PriorityDot({required this.priority});
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, label) = switch (priority) {
+      'high' => (AppColors.danger, 'Alta'),
+      'low' => (AppColors.success, 'Baixa'),
+      _ => (AppColors.warning, 'Média'),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withAlpha(28),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withAlpha(80), width: 0.8),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
           color: color,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: color.withAlpha(80),
-              blurRadius: 4,
-              spreadRadius: 1,
-            ),
-          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FavoriteButton extends StatefulWidget {
+  final Note note;
+
+  const _FavoriteButton({required this.note});
+
+  @override
+  State<_FavoriteButton> createState() => _FavoriteButtonState();
+}
+
+class _FavoriteButtonState extends State<_FavoriteButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: _pressed ? 1.22 : 1.0,
+      duration: const Duration(milliseconds: 150),
+      child: GestureDetector(
+        onTap: () async {
+          setState(() => _pressed = true);
+          await context.read<NoteProvider>().toggleFavorite(widget.note);
+          if (mounted) setState(() => _pressed = false);
+        },
+        child: Icon(
+          widget.note.isFavorite
+              ? Icons.favorite_rounded
+              : Icons.favorite_border_rounded,
+          size: 18,
+          color: widget.note.isFavorite
+              ? AppColors.danger
+              : (Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white38
+                  : AppColors.mutedInk.withAlpha(120)),
         ),
       ),
     );
@@ -236,143 +336,26 @@ class _ScaleTransitionCheckboxState extends State<ScaleTransitionCheckbox> {
   @override
   Widget build(BuildContext context) {
     return AnimatedScale(
-      scale: _pressed ? .86 : 1,
+      scale: _pressed ? 0.86 : 1.0,
       duration: const Duration(milliseconds: 120),
-      child: Checkbox(
-        value: widget.note.isCompleted,
-        onChanged: (value) async {
-          setState(() => _pressed = true);
-          await context.read<NoteProvider>().updateNote(
-            widget.note.copyWith(
-              isCompleted: value ?? false,
-              updatedAt: DateTime.now(),
-            ),
-          );
-          if (mounted) setState(() => _pressed = false);
-        },
-      ),
-    );
-  }
-}
-
-class _FavoriteButton extends StatefulWidget {
-  final Note note;
-
-  const _FavoriteButton({required this.note});
-
-  @override
-  State<_FavoriteButton> createState() => _FavoriteButtonState();
-}
-
-class _FavoriteButtonState extends State<_FavoriteButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedScale(
-      scale: _pressed ? 1.22 : 1,
-      duration: const Duration(milliseconds: 160),
-      child: IconButton(
-        icon: Icon(
-          widget.note.isFavorite
-              ? Icons.favorite_rounded
-              : Icons.favorite_border_rounded,
-          color: widget.note.isFavorite
-              ? AppColors.danger
-              : Theme.of(context).colorScheme.primary,
-        ),
-        onPressed: () async {
-          setState(() => _pressed = true);
-          await context.read<NoteProvider>().toggleFavorite(widget.note);
-          if (mounted) setState(() => _pressed = false);
-        },
-      ),
-    );
-  }
-}
-
-class _ReviewBadge extends StatelessWidget {
-  final _ReviewState review;
-
-  const _ReviewBadge({required this.review});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: review.color.withAlpha(40),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(review.icon, size: 14, color: review.color),
-          const SizedBox(width: 5),
-          Text(
-            review.label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: review.color,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PriorityBadge extends StatelessWidget {
-  final String priority;
-
-  const _PriorityBadge({required this.priority});
-
-  @override
-  Widget build(BuildContext context) {
-    final (color, label) = switch (priority) {
-      'high' => (AppColors.danger, 'Alta'),
-      'low' => (AppColors.success, 'Baixa'),
-      _ => (AppColors.softOrange, 'Média'),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withAlpha(32),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withAlpha(110), width: .8),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w800,
+      child: Transform.scale(
+        scale: 0.85,
+        child: Checkbox(
+          value: widget.note.isCompleted,
+          activeColor: AppColors.primaryGreen,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          onChanged: (value) async {
+            setState(() => _pressed = true);
+            await context.read<NoteProvider>().updateNote(
+              widget.note.copyWith(
+                isCompleted: value ?? false,
+                updatedAt: DateTime.now(),
+              ),
+            );
+            if (mounted) setState(() => _pressed = false);
+          },
         ),
       ),
     );
   }
-}
-
-class _TagPill extends StatelessWidget {
-  final String tag;
-
-  const _TagPill({required this.tag});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '#$tag',
-      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: Theme.of(context).colorScheme.primary,
-        fontWeight: FontWeight.w700,
-      ),
-    );
-  }
-}
-
-class _ReviewState {
-  final String label;
-  final IconData icon;
-  final Color color;
-
-  const _ReviewState(this.label, this.icon, this.color);
 }

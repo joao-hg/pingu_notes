@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../providers/note_provider.dart';
-import 'pingu_brand.dart';
 
 class EvolutionPanel extends StatelessWidget {
   const EvolutionPanel({super.key});
@@ -49,9 +48,9 @@ class EvolutionPanel extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _MasteryProgressCard(
-                mastered: stats['totalMastered'],
-                learning: stats['totalLearning'],
-                total: stats['totalNotes'],
+                mastered: stats['totalMastered'] as int,
+                learning: stats['totalLearning'] as int,
+                total: stats['totalNotes'] as int,
               ),
             ],
           ),
@@ -76,10 +75,13 @@ class _EvolutionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PinguPaper(
+    return Container(
       padding: const EdgeInsets.all(12),
-      color: color.withAlpha(20),
-      border: BorderSide(color: color.withAlpha(80)),
+      decoration: BoxDecoration(
+        color: color.withAlpha(20),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withAlpha(80)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -117,9 +119,18 @@ class _MasteryProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (total == 0) {
-      return PinguPaper(
+      return Container(
         padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.cardBorder,
+          ),
+        ),
         child: const Center(
           child: Text(
             'Nenhuma nota ainda. Crie sua primeira nota para acompanhar seu progresso!',
@@ -130,8 +141,15 @@ class _MasteryProgressCard extends StatelessWidget {
       );
     }
 
-    return PinguPaper(
+    return Container(
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.cardBorder,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

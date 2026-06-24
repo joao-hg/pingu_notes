@@ -21,7 +21,7 @@ class AudioRecorderWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.mic, size: 24),
-      color: AppColors.deepOceanBlue,
+      color: AppColors.categoryAudio,
       tooltip: 'Gravar Áudio',
       onPressed: () => _showUnavailable(context),
     );

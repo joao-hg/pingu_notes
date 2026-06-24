@@ -9,33 +9,17 @@ class ReviewNote {
   Future<void> call(Note note) async {
     final now = DateTime.now();
     final newReviewCount = note.reviewCount + 1;
-    
-    DateTime nextReview;
-    switch (newReviewCount) {
-      case 1:
-        nextReview = now.add(const Duration(days: 1));
-        break;
-      case 2:
-        nextReview = now.add(const Duration(days: 3));
-        break;
-      case 3:
-        nextReview = now.add(const Duration(days: 7));
-        break;
-      case 4:
-        nextReview = now.add(const Duration(days: 15));
-        break;
-      default:
-        nextReview = now.add(const Duration(days: 30));
-    }
 
-    int masteryLevel;
-    if (newReviewCount == 0) {
-      masteryLevel = 0;
-    } else if (newReviewCount >= 1 && newReviewCount <= 3) {
-      masteryLevel = 1; // Learning
-    } else {
-      masteryLevel = 2; // Mastered (4+)
-    }
+    final nextReview = switch (newReviewCount) {
+      1 => now.add(const Duration(days: 1)),
+      2 => now.add(const Duration(days: 3)),
+      3 => now.add(const Duration(days: 7)),
+      4 => now.add(const Duration(days: 15)),
+      _ => now.add(const Duration(days: 30)),
+    };
+
+    // 1–3 reviews: learning; 4+: mastered
+    final masteryLevel = newReviewCount <= 3 ? 1 : 2;
 
     final updatedNote = note.copyWith(
       reviewCount: newReviewCount,

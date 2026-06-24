@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../providers/note_provider.dart';
 import '../pages/note_edit_page.dart';
 import '../pages/study_page.dart';
-import 'pingu_brand.dart';
 
 class ReviewPanel extends StatelessWidget {
   const ReviewPanel({super.key});
@@ -16,101 +16,136 @@ class ReviewPanel extends StatelessWidget {
         final dueReviews = provider.dueReviews;
         final forgotten = provider.forgottenNotes;
 
-        if (dueReviews.isEmpty && forgotten.isEmpty) return const SizedBox.shrink();
+        if (dueReviews.isEmpty && forgotten.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (dueReviews.isNotEmpty) ...[
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        '📚 Estudo Espaçado',
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                // Study banner
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withAlpha(isDark ? 35 : 18),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.primaryGreen.withAlpha(isDark ? 80 : 50),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.school_rounded,
+                        size: 20,
+                        color: AppColors.primaryGreen,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Estudo Espaçado',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppColors.primaryGreen,
+                              ),
+                            ),
+                            Text(
+                              '${dueReviews.length} ${dueReviews.length == 1 ? 'nota pronta' : 'notas prontas'} para revisão',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: AppColors.primaryGreen.withAlpha(200),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    _StudyNowButton(count: dueReviews.length),
-                  ],
+                      _StudyNowButton(count: dueReviews.length),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
               ],
               if (forgotten.isNotEmpty) ...[
                 Text(
-                  '⚠️ Você pode ter esquecido',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  'Você pode ter esquecido',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: AppColors.warning,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 SizedBox(
-                  height: 100,
+                  height: 88,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: forgotten.length,
                     itemBuilder: (context, index) {
                       final note = forgotten[index];
-                      final severity = provider.getForgottenSeverity(note);
-                      final baseline = note.lastReviewedAt ?? note.createdAt;
-                      final days = DateTime.now().difference(baseline).inDays;
+                      final severity = provider.getNoteSeverity(note);
+                      final baseline =
+                          note.lastReviewedAt ?? note.createdAt;
+                      final days =
+                          DateTime.now().difference(baseline).inDays;
 
-                      Color color;
-                      String prefix;
-                      switch (severity) {
-                        case 'red':
-                          color = AppColors.danger;
-                          prefix = '🔴';
-                          break;
-                        case 'orange':
-                          color = AppColors.softOrange;
-                          prefix = '🟠';
-                          break;
-                        default:
-                          color = AppColors.warmYellow;
-                          prefix = '🟡';
-                      }
+                      final color = switch (severity) {
+                        'red' => AppColors.danger,
+                        'orange' => AppColors.warning,
+                        _ => AppColors.categoryStudy,
+                      };
 
                       return Container(
-                        width: 200,
-                        margin: const EdgeInsets.only(right: 12),
+                        width: 176,
+                        margin: const EdgeInsets.only(right: 10),
                         child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NoteEditPage(note: note),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => NoteEditPage(note: note),
+                            ),
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: color.withAlpha(isDark ? 28 : 14),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: color.withAlpha(isDark ? 70 : 50),
                               ),
-                            );
-                          },
-                          child: PinguPaper(
-                            padding: const EdgeInsets.all(12.0),
-                            color: color.withAlpha(20),
-                            border: BorderSide(color: color.withAlpha(100)),
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  '$prefix ${note.title.isEmpty ? 'Sem título' : note.title}',
+                                  note.title.isEmpty ? 'Sem título' : note.title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 3),
                                 Text(
                                   'Sem revisão há $days dias',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 10,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
                                     color: color.withAlpha(200),
                                   ),
                                 ),
@@ -138,26 +173,26 @@ class _StudyNowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: () {
-        // We'll implement StudyPage next or just open the first due note
-        _startStudySession(context);
-      },
-      icon: const Icon(Icons.school_outlined, size: 18),
-      label: Text('Estudar Agora ($count)'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.deepOceanBlue,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const StudyPage()),
       ),
-    );
-  }
-
-  void _startStudySession(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const StudyPage()),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGreen,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          'Estudar',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
     );
   }
 }

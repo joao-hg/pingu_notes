@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../domain/entities/note.dart';
 import '../providers/note_provider.dart';
 import 'audio_recorder_widget.dart';
@@ -15,17 +17,16 @@ class QuickAddModal extends StatefulWidget {
 class _QuickAddModalState extends State<QuickAddModal> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  final TextEditingController _tagsController = TextEditingController();
+  final FocusNode _contentFocus = FocusNode();
   bool _isFavorite = false;
   DateTime? _reminderAt;
-
-  final FocusNode _contentFocusNode = FocusNode();
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _contentFocusNode.requestFocus();
+      _contentFocus.requestFocus();
     });
   }
 
@@ -33,8 +34,7 @@ class _QuickAddModalState extends State<QuickAddModal> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
-    _tagsController.dispose();
-    _contentFocusNode.dispose();
+    _contentFocus.dispose();
     super.dispose();
   }
 
@@ -53,45 +53,55 @@ class _QuickAddModalState extends State<QuickAddModal> {
       if (time != null) {
         setState(() {
           _reminderAt = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
+              date.year, date.month, date.day, time.hour, time.minute);
         });
       }
     }
   }
 
-  void _save() {
-    final title = _titleController.text.trim();
-    final content = _contentController.text.trim();
-    final tags = _tagsController.text
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-
-    if (content.isEmpty && title.isEmpty) {
-      Navigator.pop(context);
-      return;
-    }
-
+  Note _buildNote() {
     final now = DateTime.now();
-    final note = Note(
-      title: title,
-      content: content,
+    return Note(
+      title: _titleController.text.trim(),
+      content: _contentController.text.trim(),
       createdAt: now,
       updatedAt: now,
       lastViewedAt: now,
       reminderAt: _reminderAt,
       isFavorite: _isFavorite,
-      tags: tags,
     );
+  }
 
-    context.read<NoteProvider>().addNote(note);
-    if (mounted) Navigator.pop(context);
+  Future<void> _save({bool openEditor = false}) async {
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+
+    if (title.isEmpty && content.isEmpty) {
+      Navigator.pop(context);
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      debugPrint('[EXPANDIR] Salvando nota...');
+      final savedNote =
+          await context.read<NoteProvider>().addNote(_buildNote());
+      debugPrint('[EXPANDIR] Nota criada — ID=${savedNote.id}');
+      if (!mounted) return;
+
+      if (openEditor) {
+        debugPrint('[EXPANDIR] ID retornado: ${savedNote.id}');
+        debugPrint('[EXPANDIR] Navegando para editor');
+        // Return the saved note as the modal result — caller handles navigation
+        Navigator.pop(context, savedNote);
+      } else {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      debugPrint('[EXPANDIR] ERRO: $e');
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -103,94 +113,129 @@ class _QuickAddModalState extends State<QuickAddModal> {
         right: 16,
         top: 16,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Nova Nota Inteligente',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.check),
-                onPressed: _save,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ],
-          ),
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              hintText: 'Título (opcional)',
-              border: InputBorder.none,
-            ),
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          TextField(
-            controller: _contentController,
-            focusNode: _contentFocusNode,
-            decoration: const InputDecoration(
-              hintText: 'O que você não pode esquecer?',
-              border: InputBorder.none,
-            ),
-            maxLines: 5,
-            minLines: 1,
-          ),
-          TextField(
-            controller: _tagsController,
-            decoration: const InputDecoration(
-              hintText: 'Tags (separadas por vírgula)',
-              prefixIcon: Icon(Icons.tag, size: 18),
-              border: InputBorder.none,
-            ),
-            style: const TextStyle(fontSize: 14),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
               children: [
-                ActionChip(
-                  avatar: Icon(
-                    _isFavorite ? Icons.star : Icons.star_border,
-                    size: 16,
+                Text(
+                  'Nova Nota',
+                  style: GoogleFonts.poppins(
+                      fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const Spacer(),
+                if (_isSaving)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else ...[
+                  TextButton(
+                    onPressed: () => _save(openEditor: true),
+                    child: Text(
+                      'Expandir',
+                      style: GoogleFonts.poppins(
+                          fontSize: 13, color: AppColors.mutedInk),
+                    ),
                   ),
-                  label: Text(_isFavorite ? 'Favorito' : 'Marcar Favorito'),
-                  onPressed: () => setState(() => _isFavorite = !_isFavorite),
-                  backgroundColor: _isFavorite
-                      ? Colors.amber.withAlpha(50)
-                      : null,
-                ),
-                const SizedBox(width: 8),
-                InputChip(
-                  avatar: const Icon(Icons.alarm, size: 16),
-                  label: Text(
-                    _reminderAt == null
-                        ? 'Lembrete'
-                        : DateFormat('dd/MM HH:mm').format(_reminderAt!),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: () => _save(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'Salvar',
+                        style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white),
+                      ),
+                    ),
                   ),
-                  onPressed: _pickReminder,
-                  onDeleted: _reminderAt != null
-                      ? () => setState(() => _reminderAt = null)
-                      : null,
-                ),
-                const SizedBox(width: 8),
-                AudioRecorderWidget(
-                  onTranscription: (text) {
-                    setState(() {
-                      _contentController.text = '${_contentController.text}\n$text'.trim();
-                    });
-                  },
-                ),
+                ],
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-        ],
+
+            // Title
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                hintText: 'Título (opcional)',
+                hintStyle: TextStyle(color: AppColors.mutedInk),
+                border: InputBorder.none,
+              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => _contentFocus.requestFocus(),
+            ),
+
+            // Content
+            TextField(
+              controller: _contentController,
+              focusNode: _contentFocus,
+              decoration: const InputDecoration(
+                hintText: 'O que você não pode esquecer?',
+                border: InputBorder.none,
+              ),
+              maxLines: null,
+              minLines: 3,
+              keyboardType: TextInputType.multiline,
+            ),
+
+            // Action chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ActionChip(
+                    avatar: Icon(
+                      _isFavorite ? Icons.star : Icons.star_border,
+                      size: 16,
+                    ),
+                    label: Text(_isFavorite ? 'Favorito' : 'Favoritar'),
+                    onPressed: () =>
+                        setState(() => _isFavorite = !_isFavorite),
+                    backgroundColor: _isFavorite
+                        ? Colors.amber.withAlpha(50)
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
+                  InputChip(
+                    avatar: const Icon(Icons.alarm, size: 16),
+                    label: Text(
+                      _reminderAt == null
+                          ? 'Lembrete'
+                          : DateFormat('dd/MM HH:mm').format(_reminderAt!),
+                    ),
+                    onPressed: _pickReminder,
+                    onDeleted: _reminderAt != null
+                        ? () => setState(() => _reminderAt = null)
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
+                  AudioRecorderWidget(
+                    onTranscription: (text) {
+                      setState(() {
+                        _contentController.text =
+                            '${_contentController.text}\n$text'.trim();
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

@@ -79,53 +79,70 @@ class _GoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      child: PinguPaper(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    goal.title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.cardBorder,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  goal.title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
-                  onPressed: () => context.read<NoteProvider>().deleteStudyGoal(goal.id!),
-                ),
-              ],
-            ),
-            if (goal.description != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                goal.description!,
-                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
+                onPressed: () => context.read<NoteProvider>().deleteStudyGoal(goal.id!),
               ),
             ],
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: LinearProgressIndicator(
-                    value: goal.progress,
-                    backgroundColor: Theme.of(context).colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '${(goal.progress * 100).toInt()}%',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
+          ),
+          if (goal.description != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              goal.description!,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
-        ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: LinearProgressIndicator(
+                  value: goal.progress,
+                  backgroundColor: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${(goal.progress * 100).toInt()}%',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline, size: 24),
+                onPressed: () {
+                  final newProgress = (goal.progress + 0.1).clamp(0.0, 1.0);
+                  context.read<NoteProvider>().updateStudyGoal(
+                    goal.copyWith(progress: newProgress),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

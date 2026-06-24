@@ -1,4 +1,7 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../data/datasource/note_local_datasource.dart';
 import '../data/repositories/note_repository_impl.dart';
 import '../data/repositories/knowledge_repository_impl.dart';
@@ -21,6 +24,12 @@ import 'notification_service.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  // 0. Initialize Database Factory for Desktop
+  if (!kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+
   // 1. Data sources
   sl.registerLazySingleton<NoteLocalDataSource>(
     () => NoteLocalDataSourceImpl(),

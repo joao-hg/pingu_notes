@@ -46,7 +46,9 @@ abstract class NoteLocalDataSource {
 }
 
 class NoteLocalDataSourceImpl implements NoteLocalDataSource {
-  static Database? _database;
+  Database? _database;
+
+  NoteLocalDataSourceImpl({this._database});
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -77,15 +79,17 @@ class NoteLocalDataSourceImpl implements NoteLocalDataSource {
     await db.execute('CREATE INDEX IF NOT EXISTS idx_notes_project_id ON notes (project_id)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_notes_category ON notes (category)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_notes_next_review ON notes (next_review_at)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_notes_is_task ON notes (is_task)');
   }
 
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'pingu_notes.db');
     return await openDatabase(
       path,
-      version: 8,
+      version: 11,
       onConfigure: (db) async {
-        await db.execute('PRAGMA journal_mode=WAL');
+        // journal_mode=WAL returns a result set — must use rawQuery, not execute
+        await db.rawQuery('PRAGMA journal_mode=WAL');
         await db.execute('PRAGMA foreign_keys=ON');
       },
       onCreate: (db, version) async {
@@ -113,7 +117,8 @@ class NoteLocalDataSourceImpl implements NoteLocalDataSource {
             mastery_level INTEGER DEFAULT 0,
             audio_path TEXT,
             transcription TEXT,
-            ai_analysis TEXT
+            ai_analysis TEXT,
+            content_type TEXT DEFAULT 'plain'
           )
         ''');
         await db.execute('''
@@ -327,6 +332,25 @@ class NoteLocalDataSourceImpl implements NoteLocalDataSource {
         if (oldVersion < 8) {
           await _createIndexes(db);
           await _seedAchievements(db);
+        }
+        if (oldVersion < 9) {
+          // Robust check for missing columns is_favorite and tags
+          final columns = await db.rawQuery('PRAGMA table_info(notes)');
+          final columnNames = columns.map((c) => c['name'] as String).toList();
+
+          if (!columnNames.contains('is_favorite')) {
+            await db.execute(
+              'ALTER TABLE notes ADD COLUMN is_favorite INTEGER DEFAULT 0',
+            );
+          }
+          if (!columnNames.contains('tags')) {
+            await db.execute('ALTER TABLE notes ADD COLUMN tags TEXT');
+          }
+        }
+        if (oldVersion < 11) {
+          await db.execute(
+            "ALTER TABLE notes ADD COLUMN content_type TEXT DEFAULT 'plain'",
+          );
         }
       },
       onOpen: (db) async {

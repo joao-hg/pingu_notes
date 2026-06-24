@@ -57,32 +57,43 @@ class NoteProvider with ChangeNotifier {
   String? _error;
   bool _showOnlyFavorites = false;
   String _currentQuery = '';
+  String _sortBy = 'intelligent'; // 'intelligent', 'newest', 'oldest', 'alphabetical'
+  ThemeMode _themeMode = ThemeMode.system;
 
   List<Note> get notes {
     List<Note> filtered = List.from(_notes);
 
-    // Intelligent Sorting: Forgotten > Favorites > Recent
-    filtered.sort((a, b) {
-      final aDays = DateTime.now().difference(a.lastViewedAt).inDays;
-      final bDays = DateTime.now().difference(b.lastViewedAt).inDays;
+    if (_sortBy == 'intelligent') {
+      // Intelligent Sorting: Forgotten > Favorites > Recent
+      filtered.sort((a, b) {
+        final aDays = DateTime.now().difference(a.lastViewedAt).inDays;
+        final bDays = DateTime.now().difference(b.lastViewedAt).inDays;
 
-      final aIsForgotten = aDays >= 7;
-      final bIsForgotten = bDays >= 7;
+        final aIsForgotten = aDays >= 7;
+        final bIsForgotten = bDays >= 7;
 
-      if (aIsForgotten && !bIsForgotten) return -1;
-      if (!aIsForgotten && bIsForgotten) return 1;
-      if (aIsForgotten && bIsForgotten) {
-        return bDays.compareTo(aDays);
-      }
+        if (aIsForgotten && !bIsForgotten) return -1;
+        if (!aIsForgotten && bIsForgotten) return 1;
+        if (aIsForgotten && bIsForgotten) {
+          return bDays.compareTo(aDays);
+        }
 
-      if (a.isFavorite && !b.isFavorite) return -1;
-      if (!a.isFavorite && b.isFavorite) return 1;
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
 
-      return b.updatedAt.compareTo(a.updatedAt);
-    });
+        return b.updatedAt.compareTo(a.updatedAt);
+      });
+    } else if (_sortBy == 'newest') {
+      filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    } else if (_sortBy == 'oldest') {
+      filtered.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    } else if (_sortBy == 'alphabetical') {
+      filtered.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    }
 
     if (_showOnlyFavorites) {
       filtered = filtered.where((n) => n.isFavorite).toList();
+      debugPrint('[NoteProvider] Filtro de favoritos ativo. Restantes: ${filtered.length}');
     }
     return filtered;
   }
@@ -94,6 +105,18 @@ class NoteProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get showOnlyFavorites => _showOnlyFavorites;
+  String get sortBy => _sortBy;
+  ThemeMode get themeMode => _themeMode;
+
+  void setSortBy(String value) {
+    _sortBy = value;
+    notifyListeners();
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    notifyListeners();
+  }
 
   List<Note> get inboxNotes =>
       _notes.where((n) => n.category == 'inbox').toList();
@@ -155,23 +178,22 @@ class NoteProvider with ChangeNotifier {
     }).toList();
   }
 
-  List<String> get allTags {
+  Map<String, int> _getTagFrequencyMap() {
     final tags = <String, int>{};
     for (var note in _notes) {
       for (var tag in note.tags) {
         tags[tag] = (tags[tag] ?? 0) + 1;
       }
     }
-    return tags.keys.toList()..sort();
+    return tags;
+  }
+
+  List<String> get allTags {
+    return _getTagFrequencyMap().keys.toList()..sort();
   }
 
   List<String> get topTags {
-    final tags = <String, int>{};
-    for (var note in _notes) {
-      for (var tag in note.tags) {
-        tags[tag] = (tags[tag] ?? 0) + 1;
-      }
-    }
+    final tags = _getTagFrequencyMap();
     var sorted = tags.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     return sorted.map((e) => e.key).take(5).toList();
@@ -270,11 +292,11 @@ class NoteProvider with ChangeNotifier {
     }).toList()..sort((a, b) {
       final aBaseline = a.lastReviewedAt ?? a.createdAt;
       final bBaseline = b.lastReviewedAt ?? b.createdAt;
-      return bBaseline.compareTo(aBaseline);
+      return aBaseline.compareTo(bBaseline); // Oldest baseline first = most forgotten/urgent
     });
   }
 
-  String getForgottenSeverity(Note note) {
+  String getNoteSeverity(Note note) {
     final now = DateTime.now();
     final baseline = note.lastReviewedAt ?? note.createdAt;
     final days = now.difference(baseline).inDays;
@@ -391,11 +413,19 @@ class NoteProvider with ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      _notes = await getNotesUseCase();
-      _projects = await getProjectsUseCase();
-      _studyGoals = await knowledgeRepository.getStudyGoals();
-      _connections = await knowledgeRepository.getConnections();
-      _achievements = await knowledgeRepository.getAchievements();
+      final results = await Future.wait([
+        getNotesUseCase(),
+        getProjectsUseCase(),
+        knowledgeRepository.getStudyGoals(),
+        knowledgeRepository.getConnections(),
+        knowledgeRepository.getAchievements(),
+      ]);
+      
+      _notes = results[0] as List<Note>;
+      _projects = results[1] as List<Project>;
+      _studyGoals = results[2] as List<StudyGoal>;
+      _connections = results[3] as List<KnowledgeConnection>;
+      _achievements = results[4] as List<Achievement>;
     } catch (e) {
       _error = e.toString();
       debugPrint('[NoteProvider] $e');
@@ -405,7 +435,13 @@ class NoteProvider with ChangeNotifier {
     }
   }
 
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
   Future<void> loadNotes() async {
+    _error = null;
     try {
       _notes = await getNotesUseCase();
     } catch (e) {
@@ -417,6 +453,7 @@ class NoteProvider with ChangeNotifier {
 
   Future<void> searchNotes(String query) async {
     _currentQuery = query;
+    _error = null;
     if (query.isEmpty) {
       await loadNotes();
       return;
@@ -444,20 +481,32 @@ class NoteProvider with ChangeNotifier {
     await updateNote(updatedNote);
   }
 
-  Future<void> addNote(Note note) async {
+  Future<Note> addNote(Note note) async {
+    _error = null;
     try {
+      debugPrint('[NoteProvider] addNote disparado para nota: "${note.title}"');
       final savedNote = await addNoteUseCase(note);
+      debugPrint('[NoteProvider] NOTA SALVA NO SQLITE - ID: ${savedNote.id}');
+
       _scheduleNoteNotifications(savedNote);
-      await searchNotes(_currentQuery);
+
+      debugPrint('[NoteProvider] Resetando busca para exibir a nova nota...');
+      _currentQuery = '';
+      await loadNotes();
+
       await _checkNoteCountAchievements();
+      debugPrint('[NoteProvider] Fluxo de addNote concluído com sucesso.');
+      return savedNote;
     } catch (e) {
       _error = e.toString();
-      debugPrint('[NoteProvider.addNote] $e');
+      debugPrint('[NoteProvider.addNote] ERRO NO SALVAMENTO: $e');
       notifyListeners();
+      rethrow;
     }
   }
 
   Future<void> updateNote(Note note) async {
+    _error = null;
     try {
       await updateNoteUseCase(note);
       if (note.id != null) {
@@ -472,7 +521,30 @@ class NoteProvider with ChangeNotifier {
     }
   }
 
+  /// Silent update for auto-save in the editor.
+  /// Updates the DB and the in-memory list without triggering a global
+  /// notifyListeners(), avoiding unnecessary rebuilds of background widgets.
+  Future<void> updateNoteQuiet(Note note) async {
+    try {
+      await updateNoteUseCase(note);
+      if (note.id != null) {
+        await notificationService.cancelNoteNotifications(note.id!);
+        _scheduleNoteNotifications(note);
+      }
+      // Update the note in-memory without a full DB search
+      final idx = _notes.indexWhere((n) => n.id == note.id);
+      if (idx >= 0) {
+        _notes = List<Note>.from(_notes)..[idx] = note;
+      }
+      // No notifyListeners() — background widgets stay at rest
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('[NoteProvider.updateNoteQuiet] $e');
+    }
+  }
+
   Future<void> deleteNote(int id) async {
+    _error = null;
     try {
       await deleteNoteUseCase(id);
       await notificationService.cancelNoteNotifications(id);
@@ -498,7 +570,6 @@ class NoteProvider with ChangeNotifier {
             ? '${note.content.substring(0, 47)}...'
             : note.content,
         scheduledDate: note.reminderAt!,
-        type: PinguNotificationType.reminder,
       );
     }
 

@@ -24,6 +24,7 @@ class Note extends Equatable {
   final String? audioPath;
   final String? transcription;
   final Map<String, dynamic>? aiAnalysis;
+  final String contentType; // 'plain' | 'markdown'
 
   const Note({
     this.id,
@@ -49,6 +50,7 @@ class Note extends Equatable {
     this.audioPath,
     this.transcription,
     this.aiAnalysis,
+    this.contentType = 'plain',
   });
 
   Note copyWith({
@@ -75,6 +77,7 @@ class Note extends Equatable {
     String? audioPath,
     String? transcription,
     Map<String, dynamic>? aiAnalysis,
+    String? contentType,
   }) {
     return Note(
       id: id ?? this.id,
@@ -100,6 +103,7 @@ class Note extends Equatable {
       audioPath: audioPath ?? this.audioPath,
       transcription: transcription ?? this.transcription,
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
+      contentType: contentType ?? this.contentType,
     );
   }
 
@@ -128,5 +132,6 @@ class Note extends Equatable {
     audioPath,
     transcription,
     aiAnalysis,
+    contentType,
   ];
 }

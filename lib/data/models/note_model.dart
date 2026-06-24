@@ -26,6 +26,7 @@ class NoteModel extends Note {
     super.audioPath,
     super.transcription,
     super.aiAnalysis,
+    super.contentType,
   });
 
   factory NoteModel.fromMap(Map<String, dynamic> map) {
@@ -71,6 +72,7 @@ class NoteModel extends Note {
       aiAnalysis: map['ai_analysis'] != null
           ? jsonDecode(map['ai_analysis']) as Map<String, dynamic>
           : null,
+      contentType: map['content_type'] as String? ?? 'plain',
     );
   }
 
@@ -99,6 +101,7 @@ class NoteModel extends Note {
       'audio_path': audioPath,
       'transcription': transcription,
       'ai_analysis': aiAnalysis != null ? jsonEncode(aiAnalysis) : null,
+      'content_type': contentType,
     };
   }
 
@@ -127,6 +130,7 @@ class NoteModel extends Note {
       audioPath: note.audioPath,
       transcription: note.transcription,
       aiAnalysis: note.aiAnalysis,
+      contentType: note.contentType,
     );
   }
 }

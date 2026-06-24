@@ -16,6 +16,12 @@ class _AskPinguPageState extends State<AskPinguPage> {
   final List<Map<String, String>> _messages = [];
   bool _isTyping = false;
 
+  @override
+  void dispose() {
+    _queryController.dispose();
+    super.dispose();
+  }
+
   void _sendMessage() async {
     final query = _queryController.text.trim();
     if (query.isEmpty) return;
@@ -89,7 +95,7 @@ class _ChatMessage extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isUser ? AppColors.deepOceanBlue : Theme.of(context).colorScheme.surfaceContainerHighest,
+          color: isUser ? AppColors.primaryGreen : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(18).copyWith(
             bottomRight: isUser ? const Radius.circular(0) : null,
             bottomLeft: !isUser ? const Radius.circular(0) : null,
@@ -131,7 +137,7 @@ class _ChatInput extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.send_rounded, color: AppColors.deepOceanBlue),
+            icon: const Icon(Icons.send_rounded, color: AppColors.primaryGreen),
             onPressed: onSend,
           ),
         ],
